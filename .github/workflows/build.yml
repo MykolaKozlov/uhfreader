@@ -11,10 +11,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Retarget Project to .NET 4.8
-      # Цей скрипт автоматично замінює стару версію фреймворку на актуальну 4.8 всередині файлу проекту
+    - name: Retarget All Projects to .NET 4.8
+      # Цей скрипт знаходить абсолютно всі файли .csproj в репозиторії та оновлює фреймворк
       run: |
-        (Get-Content UHFDemo/UHFDemo.csproj) -replace '<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>', '<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>' | Set-Content UHFDemo/UHFDemo.csproj
+        Get-ChildItem -Filter *.csproj -Recurse | ForEach-Object {
+          (Get-Content $_.FullName) -replace '<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>', '<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>' | Set-Content $_.FullName
+          Write-Host "Успішно оновлено: $($_.Name)"
+        }
       shell: powershell
 
     - name: Setup MSBuild
