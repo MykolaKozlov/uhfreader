@@ -12,7 +12,6 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Retarget All Projects to .NET 4.8
-      # Цей скрипт знаходить абсолютно всі файли .csproj в репозиторії та оновлює фреймворк
       run: |
         Get-ChildItem -Filter *.csproj -Recurse | ForEach-Object {
           (Get-Content $_.FullName) -replace '<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>', '<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>' | Set-Content $_.FullName
@@ -30,8 +29,18 @@ jobs:
       run: nuget restore uhfreader.sln
       continue-on-error: true
 
+    - name: Inject Missing MySQL Dependency
+      # Примусово завантажуємо стабільну версію драйвера MySQL і знаходимо шлях до DLL
+      run: |
+        nuget install MySql.Data -Version 6.10.9 -OutputDirectory custom_packages
+        $dllFolder = (Get-ChildItem -Path custom_packages -Filter MySql.Data.dll -Recurse | Select-Object -First 1).DirectoryName
+        Write-Host "Шлях до MySQL DLL: $dllFolder"
+        echo "MYSQL_PATH=$dllFolder" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      shell: powershell
+
     - name: Build UHFDemo Project Only
-      run: msbuild UHFDemo/UHFDemo.csproj /p:Configuration=Release /v:m
+      # Передаємо шлях до знайденої DLL через параметр ReferencePath
+      run: msbuild UHFDemo/UHFDemo.csproj /p:Configuration=Release /p:ReferencePath="${{ env.MYSQL_PATH }}" /v:m
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
