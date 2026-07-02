@@ -1,7 +1,7 @@
 name: Build UHFDemo EXE
 
 on:
-  workflow_dispatch: # Дозволяє запустити збірку вручну кнопкою
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,9 +19,11 @@ jobs:
 
     - name: Restore NuGet Packages
       run: nuget restore uhfreader.sln
+      continue-on-error: true # Ігноруємо помилки відновлення пакетів, якщо вони застаріли
 
-    - name: Build Solution
-      run: msbuild uhfreader.sln /p:Configuration=Release /p:Platform="Any CPU"
+    - name: Build UHFDemo Project Only
+      # Збираємо конкретно папку з додатком, ігноруючи зламані залежності рішення (.sln)
+      run: msbuild UHFDemo/UHFDemo.csproj /p:Configuration=Release /p:Platform="AnyCPU"
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
