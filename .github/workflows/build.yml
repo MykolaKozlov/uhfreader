@@ -11,6 +11,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Retarget Project to .NET 4.8
+      # Цей скрипт автоматично замінює стару версію фреймворку на актуальну 4.8 всередині файлу проекту
+      run: |
+        (Get-Content UHFDemo/UHFDemo.csproj) -replace '<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>', '<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>' | Set-Content UHFDemo/UHFDemo.csproj
+      shell: powershell
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
@@ -22,7 +28,6 @@ jobs:
       continue-on-error: true
 
     - name: Build UHFDemo Project Only
-      # Дозволяємо MSBuild самому обрати правильну архітектуру (x86 або AnyCPU), закладену автором
       run: msbuild UHFDemo/UHFDemo.csproj /p:Configuration=Release /v:m
 
     - name: Upload Artifact
