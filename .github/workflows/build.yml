@@ -15,7 +15,7 @@ jobs:
       run: |
         Get-ChildItem -Filter *.csproj -Recurse | ForEach-Object {
           (Get-Content $_.FullName) -replace '<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>', '<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>' | Set-Content $_.FullName
-          Write-Host "Успішно оновлено фреймворк: $($_.Name)"
+          Write-Host "Successfully updated framework for: $($_.Name)"
         }
       shell: powershell
 
@@ -27,24 +27,21 @@ jobs:
 
     - name: Fix and Inject MySQL Dependency
       run: |
-        # 1. Завантажуємо пакет драйвера
+        # 1. Download driver package
         nuget install MySql.Data -Version 6.10.9 -OutputDirectory custom_packages
         
-        # 2. Знаходимо файл проекту та скидаємо сувору перевірку версії через регулярні вирази
+        # 2. Find project file and patch strong name mismatch via regex
         $csproj = "UHFDemo/UHFDemo.csproj"
         $content = Get-Content $csproj -Raw
         
-        # Паттерн знаходить весь тег <Reference Include="MySql.Data...">...</Reference> незалежно від версії
         $pattern = '(?s)<Reference Include="MySql\.Data[^>]*">.*?</Reference>'
-        
-        # Заміняємо його на «м'яке» посилання, що вказує на наш завантажений файл
         $replacement = '<Reference Include="MySql.Data"><HintPath>..\custom_packages\MySql.Data.6.10.9\lib\net452\MySql.Data.dll</HintPath></Reference>'
         
         if ($content -match $pattern) {
             $content -replace $pattern, $replacement | Set-Content $csproj
-            Write-Host "Логіку посилань MySQL успішно виправлено в .csproj!"
+            Write-Host "MySQL reference successfully fixed in .csproj!"
         } else {
-            Write-Warning "Не вдалося знайти тег Reference для MySql.Data, можливо він записаний інакше."
+            Write-Warning "Could not find Reference tag for MySql.Data."
         }
       shell: powershell
 
